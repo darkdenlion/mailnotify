@@ -149,6 +149,7 @@ tell application "Mail"
 	set unreadMessages to (messages of inbox whose read status is false)
 	set msg to item %d of unreadMessages
 	set msgContent to content of msg
+	set read status of msg to true
 	return msgContent
 end tell
 `, index)
