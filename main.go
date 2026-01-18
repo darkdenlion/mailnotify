@@ -78,6 +78,10 @@ type emailContentMsg struct {
 	err  error
 }
 
+type markAllReadMsg struct {
+	err error
+}
+
 func fetchEmails() tea.Cmd {
 	return func() tea.Msg {
 		emails, err := getUnreadEmails()
@@ -89,6 +93,13 @@ func fetchEmailContent(index int) tea.Cmd {
 	return func() tea.Msg {
 		body, err := getEmailContent(index)
 		return emailContentMsg{body: body, err: err}
+	}
+}
+
+func markAllAsRead() tea.Cmd {
+	return func() tea.Msg {
+		err := setAllEmailsRead()
+		return markAllReadMsg{err: err}
 	}
 }
 
@@ -161,6 +172,19 @@ end tell
 	return strings.TrimSpace(string(out)), nil
 }
 
+func setAllEmailsRead() error {
+	script := `
+tell application "Mail"
+	set unreadMessages to (messages of inbox whose read status is false)
+	repeat with msg in unreadMessages
+		set read status of msg to true
+	end repeat
+end tell
+`
+	cmd := exec.Command("osascript", "-e", script)
+	return cmd.Run()
+}
+
 func initialModel() model {
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.
@@ -214,6 +238,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.mode == listView {
 				return m, fetchEmails()
 			}
+		case "a":
+			if m.mode == listView && len(m.emails) > 0 {
+				m.loading = true
+				return m, markAllAsRead()
+			}
 		case "enter":
 			if m.mode == listView && !m.loading {
 				if item, ok := m.list.SelectedItem().(email); ok {
@@ -259,6 +288,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.mode = detailView
 		m.viewport.SetContent(m.emailBody)
 		m.viewport.GotoTop()
+
+	case markAllReadMsg:
+		m.loading = false
+		if msg.err != nil {
+			m.err = msg.err
+		}
+		return m, fetchEmails()
 	}
 
 	var cmd tea.Cmd
@@ -276,7 +312,7 @@ func (m model) View() string {
 	}
 
 	if m.loading {
-		return "\n  Loading email content...\n"
+		return "\n  Loading...\n"
 	}
 
 	if m.mode == detailView && m.currentEmail != nil {
@@ -295,7 +331,7 @@ func (m model) View() string {
 		return lipgloss.NewStyle().Padding(1, 2).Render(content) + "\n" + help
 	}
 
-	status := statusStyle.Render(fmt.Sprintf("Last updated: %s • Auto-refresh: 10s • Press 'r' to refresh, 'enter' to read",
+	status := statusStyle.Render(fmt.Sprintf("Last updated: %s • Auto-refresh: 10s • 'r' refresh • 'a' mark all read • 'enter' read",
 		m.lastPoll.Format("15:04:05")))
 
 	return m.list.View() + "\n" + status
