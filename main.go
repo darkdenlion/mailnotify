@@ -322,7 +322,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	if m.err != nil {
-		return fmt.Sprintf("\n  Error: %v\n\n  Make sure Mail.app is running and permissions are granted.\n  Press 'r' to retry, 'q' to quit.\n", m.err)
+		errBox := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#FF6B6B")).
+			Padding(1, 2).
+			Width(60)
+
+		errTitle := lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#FF6B6B")).
+			Render("Error")
+
+		errMsg := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Render(fmt.Sprintf("%v", m.err))
+
+		errHint := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#888888")).
+			Italic(true).
+			Render("Make sure Mail.app is running and permissions are granted.\n\n'r' retry • 'q' quit")
+
+		box := errBox.Render(fmt.Sprintf("%s\n\n%s\n\n%s", errTitle, errMsg, errHint))
+
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, box)
 	}
 
 	if m.loading {
