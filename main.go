@@ -319,7 +319,7 @@ func initialModel() model {
 	l.Styles.Title = titleStyle
 	l.SetShowStatusBar(true)
 	l.SetFilteringEnabled(true)
-	l.SetShowHelp(true)
+	l.SetShowHelp(false)
 
 	vp := viewport.New(0, 0)
 
@@ -522,27 +522,53 @@ func (m model) View() string {
 			Padding(1, 2).
 			Width(boxWidth)
 
-		help := statusStyle.Render("  ↑/↓ scroll • q/esc back to list")
-		return "\n" + lipgloss.NewStyle().PaddingLeft(2).Render(detailBox.Render(content)) + "\n" + help
+		helpBar := renderHelpBar(m.width, [][]string{
+			{"↑/↓", "scroll"},
+			{"q", "back"},
+			{"esc", "back to list"},
+		})
+		return "\n" + lipgloss.NewStyle().PaddingLeft(2).Render(detailBox.Render(content)) + "\n" + helpBar
 	}
 
-	statusBarStyle := lipgloss.NewStyle().
-		Background(lipgloss.Color("#2D2D2D")).
-		Foreground(lipgloss.Color("#AAAAAA")).
-		Padding(0, 1).
-		Width(m.width)
+	helpBar := renderHelpBar(m.width, [][]string{
+		{"enter", "read"},
+		{"r", "refresh"},
+		{"a", "mark all read"},
+		{"/", "filter"},
+		{"q", "quit"},
+	})
 
-	timeLabel := lipgloss.NewStyle().
-		Background(accentColor).
-		Foreground(lipgloss.Color("#FFFFFF")).
+	timeInfo := lipgloss.NewStyle().
+		Foreground(dimColor).
+		Italic(true).
+		Render(fmt.Sprintf(" Updated %s • Auto-refresh: 10s", m.lastPoll.Format("15:04:05")))
+
+	return m.list.View() + "\n" + timeInfo + "\n" + helpBar
+}
+
+func renderHelpBar(width int, bindings [][]string) string {
+	keyStyle := lipgloss.NewStyle().
 		Bold(true).
-		Padding(0, 1).
-		Render(fmt.Sprintf(" %s", m.lastPoll.Format("15:04:05")))
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(lipgloss.Color("#3F3F46")).
+		Padding(0, 1)
 
-	statusText := statusBarStyle.Render(
-		fmt.Sprintf("%s  Auto-refresh: 10s  |  r refresh  |  a mark all read  |  enter read  |  q quit", timeLabel))
+	descStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#A1A1AA")).
+		Background(lipgloss.Color("#27272A")).
+		Padding(0, 1)
 
-	return m.list.View() + "\n" + statusText
+	var parts []string
+	for _, b := range bindings {
+		parts = append(parts, keyStyle.Render(b[0])+descStyle.Render(b[1]))
+	}
+
+	bar := lipgloss.NewStyle().
+		Background(lipgloss.Color("#27272A")).
+		Width(width).
+		Render(strings.Join(parts, " "))
+
+	return bar
 }
 
 func main() {
