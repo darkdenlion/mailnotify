@@ -55,6 +55,53 @@ var (
 			Foreground(dimColor)
 )
 
+func relativeTime(dateStr string) string {
+	formats := []string{
+		"Monday, January 2, 2006 at 3:04:05 PM",
+		"Monday, 2 January 2006 at 3:04:05 PM",
+		"January 2, 2006 at 3:04:05 PM",
+		"2 January 2006 at 3:04:05 PM",
+		"1/2/06, 3:04 PM",
+		"2006-01-02 15:04:05",
+		"Mon Jan 2 15:04:05 2006",
+	}
+
+	var t time.Time
+	var err error
+	for _, f := range formats {
+		t, err = time.Parse(f, dateStr)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		return dateStr
+	}
+
+	d := time.Since(t)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		m := int(d.Minutes())
+		if m == 1 {
+			return "1m ago"
+		}
+		return fmt.Sprintf("%dm ago", m)
+	case d < 24*time.Hour:
+		h := int(d.Hours())
+		if h == 1 {
+			return "1h ago"
+		}
+		return fmt.Sprintf("%dh ago", h)
+	case d < 48*time.Hour:
+		return "yesterday"
+	default:
+		days := int(d.Hours() / 24)
+		return fmt.Sprintf("%dd ago", days)
+	}
+}
+
 type email struct {
 	sender  string
 	subject string
@@ -63,7 +110,7 @@ type email struct {
 }
 
 func (e email) Title() string       { return e.subject }
-func (e email) Description() string { return fmt.Sprintf("%s • %s", e.sender, e.date) }
+func (e email) Description() string { return fmt.Sprintf("%s • %s", e.sender, relativeTime(e.date)) }
 func (e email) FilterValue() string { return e.subject }
 
 type viewMode int
