@@ -15,26 +15,44 @@ import (
 )
 
 var (
+	accentColor = lipgloss.Color("#7C3AED")
+	subtleColor = lipgloss.Color("#6B7280")
+	senderColor = lipgloss.Color("#60A5FA")
+	dateColor   = lipgloss.Color("#A78BFA")
+	textColor   = lipgloss.Color("#E5E7EB")
+	dimColor    = lipgloss.Color("#4B5563")
+	successColor = lipgloss.Color("#34D399")
+	errorColor  = lipgloss.Color("#FF6B6B")
+
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#5C7AEA")).
+			Background(accentColor).
 			Padding(0, 1)
 
 	statusStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#666666")).
+			Foreground(subtleColor).
 			Italic(true)
 
 	headerStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#5C7AEA")).
+			Foreground(accentColor).
 			MarginBottom(1)
 
 	metaStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888"))
+			Foreground(subtleColor)
+
+	senderStyle = lipgloss.NewStyle().
+			Foreground(senderColor)
+
+	dateStyle = lipgloss.NewStyle().
+			Foreground(dateColor)
 
 	bodyStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF"))
+			Foreground(textColor)
+
+	dividerStyle = lipgloss.NewStyle().
+			Foreground(dimColor)
 )
 
 type email struct {
@@ -190,11 +208,15 @@ end tell
 func initialModel() model {
 	delegate := list.NewDefaultDelegate()
 	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.
-		Foreground(lipgloss.Color("#5C7AEA")).
-		BorderLeftForeground(lipgloss.Color("#5C7AEA"))
+		Foreground(accentColor).
+		BorderLeftForeground(accentColor)
 	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.
-		Foreground(lipgloss.Color("#888888")).
-		BorderLeftForeground(lipgloss.Color("#5C7AEA"))
+		Foreground(subtleColor).
+		BorderLeftForeground(accentColor)
+	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.
+		Foreground(textColor)
+	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.
+		Foreground(subtleColor)
 
 	l := list.New([]list.Item{}, delegate, 0, 0)
 	l.Title = "Unread Emails"
@@ -207,7 +229,7 @@ func initialModel() model {
 
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#5C7AEA"))
+	s.Style = lipgloss.NewStyle().Foreground(accentColor)
 
 	return model{
 		list:     l,
@@ -324,21 +346,21 @@ func (m model) View() string {
 	if m.err != nil {
 		errBox := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#FF6B6B")).
+			BorderForeground(errorColor).
 			Padding(1, 2).
 			Width(60)
 
 		errTitle := lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("#FF6B6B")).
+			Foreground(errorColor).
 			Render("Error")
 
 		errMsg := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFFFF")).
+			Foreground(textColor).
 			Render(fmt.Sprintf("%v", m.err))
 
 		errHint := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888")).
+			Foreground(subtleColor).
 			Italic(true).
 			Render("Make sure Mail.app is running and permissions are granted.\n\n'r' retry • 'q' quit")
 
@@ -353,13 +375,13 @@ func (m model) View() string {
 
 	if m.mode == listView && len(m.emails) == 0 {
 		emptyStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#5C7AEA")).
+			Foreground(successColor).
 			Bold(true).
 			Align(lipgloss.Center).
 			Width(m.width)
 
 		subtitleStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#888888")).
+			Foreground(subtleColor).
 			Italic(true).
 			Align(lipgloss.Center).
 			Width(m.width)
@@ -377,13 +399,14 @@ func (m model) View() string {
 
 	if m.mode == detailView && m.currentEmail != nil {
 		header := headerStyle.Render(m.currentEmail.subject)
-		meta := metaStyle.Render(fmt.Sprintf("From: %s\nDate: %s", m.currentEmail.sender, m.currentEmail.date))
-		divider := strings.Repeat("─", m.width-4)
+		meta := metaStyle.Render("From: ") + senderStyle.Render(m.currentEmail.sender) + "\n" +
+			metaStyle.Render("Date: ") + dateStyle.Render(m.currentEmail.date)
+		divider := dividerStyle.Render(strings.Repeat("─", m.width-4))
 
 		content := fmt.Sprintf("%s\n%s\n%s\n\n%s",
 			header,
 			meta,
-			metaStyle.Render(divider),
+			divider,
 			m.viewport.View(),
 		)
 
@@ -398,7 +421,7 @@ func (m model) View() string {
 		Width(m.width)
 
 	timeLabel := lipgloss.NewStyle().
-		Background(lipgloss.Color("#5C7AEA")).
+		Background(accentColor).
 		Foreground(lipgloss.Color("#FFFFFF")).
 		Bold(true).
 		Padding(0, 1).
