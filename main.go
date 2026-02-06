@@ -391,10 +391,23 @@ func (m model) View() string {
 		return lipgloss.NewStyle().Padding(1, 2).Render(content) + "\n" + help
 	}
 
-	status := statusStyle.Render(fmt.Sprintf("Last updated: %s • Auto-refresh: 10s • 'r' refresh • 'a' mark all read • 'enter' read",
-		m.lastPoll.Format("15:04:05")))
+	statusBarStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color("#2D2D2D")).
+		Foreground(lipgloss.Color("#AAAAAA")).
+		Padding(0, 1).
+		Width(m.width)
 
-	return m.list.View() + "\n" + status
+	timeLabel := lipgloss.NewStyle().
+		Background(lipgloss.Color("#5C7AEA")).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Bold(true).
+		Padding(0, 1).
+		Render(fmt.Sprintf(" %s", m.lastPoll.Format("15:04:05")))
+
+	statusText := statusBarStyle.Render(
+		fmt.Sprintf("%s  Auto-refresh: 10s  |  r refresh  |  a mark all read  |  enter read  |  q quit", timeLabel))
+
+	return m.list.View() + "\n" + statusText
 }
 
 func main() {
