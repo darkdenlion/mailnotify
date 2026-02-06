@@ -329,6 +329,30 @@ func (m model) View() string {
 		return fmt.Sprintf("\n  %s Loading...\n", m.spinner.View())
 	}
 
+	if m.mode == listView && len(m.emails) == 0 {
+		emptyStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#5C7AEA")).
+			Bold(true).
+			Align(lipgloss.Center).
+			Width(m.width)
+
+		subtitleStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#888888")).
+			Italic(true).
+			Align(lipgloss.Center).
+			Width(m.width)
+
+		top := (m.height - 4) / 2
+		padding := strings.Repeat("\n", top)
+
+		empty := padding +
+			emptyStyle.Render("All caught up!") + "\n\n" +
+			subtitleStyle.Render("No unread emails in your inbox.") + "\n\n" +
+			statusStyle.Render(fmt.Sprintf("  Last checked: %s • Auto-refresh: 10s • 'r' refresh • 'q' quit", m.lastPoll.Format("15:04:05")))
+
+		return empty
+	}
+
 	if m.mode == detailView && m.currentEmail != nil {
 		header := headerStyle.Render(m.currentEmail.subject)
 		meta := metaStyle.Render(fmt.Sprintf("From: %s\nDate: %s", m.currentEmail.sender, m.currentEmail.date))
