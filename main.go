@@ -313,6 +313,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			items[i] = e
 		}
 		m.list.SetItems(items)
+		if len(msg.emails) > 0 {
+			m.list.Title = fmt.Sprintf("Unread Emails (%d)", len(msg.emails))
+		} else {
+			m.list.Title = "Unread Emails"
+		}
 
 	case emailContentMsg:
 		m.loading = false
