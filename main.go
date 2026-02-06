@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -57,6 +58,7 @@ const (
 type model struct {
 	list         list.Model
 	viewport     viewport.Model
+	spinner      spinner.Model
 	emails       []email
 	err          error
 	lastPoll     time.Time
@@ -203,16 +205,22 @@ func initialModel() model {
 
 	vp := viewport.New(0, 0)
 
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#5C7AEA"))
+
 	return model{
 		list:     l,
 		viewport: vp,
+		spinner:  s,
 		lastPoll: time.Now(),
 		mode:     listView,
+		loading:  true,
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(fetchEmails(), tickCmd())
+	return tea.Batch(fetchEmails(), tickCmd(), m.spinner.Tick)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -267,7 +275,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, tickCmd()
 
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+
 	case emailsMsg:
+		m.loading = false
 		m.err = msg.err
 		m.emails = msg.emails
 		m.lastPoll = time.Now()
@@ -312,7 +326,7 @@ func (m model) View() string {
 	}
 
 	if m.loading {
-		return "\n  Loading...\n"
+		return fmt.Sprintf("\n  %s Loading...\n", m.spinner.View())
 	}
 
 	if m.mode == detailView && m.currentEmail != nil {
