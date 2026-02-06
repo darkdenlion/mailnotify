@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -112,6 +113,64 @@ type email struct {
 func (e email) Title() string       { return e.subject }
 func (e email) Description() string { return fmt.Sprintf("%s • %s", e.sender, relativeTime(e.date)) }
 func (e email) FilterValue() string { return e.subject }
+
+type emailDelegate struct{}
+
+func (d emailDelegate) Height() int                             { return 3 }
+func (d emailDelegate) Spacing() int                            { return 0 }
+func (d emailDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
+
+func (d emailDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	e, ok := item.(email)
+	if !ok {
+		return
+	}
+
+	isSelected := index == m.Index()
+
+	subject := e.subject
+	maxSubjectLen := m.Width() - 16
+	if maxSubjectLen < 10 {
+		maxSubjectLen = 10
+	}
+	if len(subject) > maxSubjectLen {
+		subject = subject[:maxSubjectLen-1] + "…"
+	}
+
+	relTime := relativeTime(e.date)
+
+	var titleLine, descLine, borderChar string
+	if isSelected {
+		borderChar = "│"
+		borderStyle := lipgloss.NewStyle().Foreground(accentColor).Bold(true)
+		titleText := lipgloss.NewStyle().Foreground(accentColor).Bold(true).Render("  " + subject)
+		timeText := lipgloss.NewStyle().Foreground(dateColor).Render(relTime)
+
+		gap := m.Width() - lipgloss.Width(titleText) - lipgloss.Width(timeText) - 4
+		if gap < 1 {
+			gap = 1
+		}
+		titleLine = borderStyle.Render(borderChar) + titleText + strings.Repeat(" ", gap) + timeText
+
+		senderText := lipgloss.NewStyle().Foreground(senderColor).Render("  " + e.sender)
+		descLine = borderStyle.Render(borderChar) + senderText
+	} else {
+		borderChar = " "
+		titleText := lipgloss.NewStyle().Foreground(textColor).Render("  " + subject)
+		timeText := lipgloss.NewStyle().Foreground(dimColor).Render(relTime)
+
+		gap := m.Width() - lipgloss.Width(titleText) - lipgloss.Width(timeText) - 4
+		if gap < 1 {
+			gap = 1
+		}
+		titleLine = borderChar + titleText + strings.Repeat(" ", gap) + timeText
+
+		senderText := lipgloss.NewStyle().Foreground(subtleColor).Render("  " + e.sender)
+		descLine = borderChar + senderText
+	}
+
+	fmt.Fprintf(w, "%s\n%s\n", titleLine, descLine)
+}
 
 type viewMode int
 
@@ -253,17 +312,7 @@ end tell
 }
 
 func initialModel() model {
-	delegate := list.NewDefaultDelegate()
-	delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.
-		Foreground(accentColor).
-		BorderLeftForeground(accentColor)
-	delegate.Styles.SelectedDesc = delegate.Styles.SelectedDesc.
-		Foreground(subtleColor).
-		BorderLeftForeground(accentColor)
-	delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.
-		Foreground(textColor)
-	delegate.Styles.NormalDesc = delegate.Styles.NormalDesc.
-		Foreground(subtleColor)
+	delegate := emailDelegate{}
 
 	l := list.New([]list.Item{}, delegate, 0, 0)
 	l.Title = "Unread Emails"
