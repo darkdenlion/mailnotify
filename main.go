@@ -287,8 +287,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.list.SetSize(msg.Width, msg.Height-2)
-		m.viewport.Width = msg.Width - 4
-		m.viewport.Height = msg.Height - 8
+		m.viewport.Width = msg.Width - 10
+		m.viewport.Height = msg.Height - 12
 
 	case tickMsg:
 		if m.mode == listView {
@@ -398,20 +398,31 @@ func (m model) View() string {
 	}
 
 	if m.mode == detailView && m.currentEmail != nil {
+		boxWidth := m.width - 4
+		if boxWidth < 20 {
+			boxWidth = 20
+		}
+
 		header := headerStyle.Render(m.currentEmail.subject)
 		meta := metaStyle.Render("From: ") + senderStyle.Render(m.currentEmail.sender) + "\n" +
 			metaStyle.Render("Date: ") + dateStyle.Render(m.currentEmail.date)
-		divider := dividerStyle.Render(strings.Repeat("─", m.width-4))
+		innerDivider := dividerStyle.Render(strings.Repeat("─", boxWidth-4))
 
 		content := fmt.Sprintf("%s\n%s\n%s\n\n%s",
 			header,
 			meta,
-			divider,
+			innerDivider,
 			m.viewport.View(),
 		)
 
-		help := statusStyle.Render("↑/↓ scroll • q/esc back to list")
-		return lipgloss.NewStyle().Padding(1, 2).Render(content) + "\n" + help
+		detailBox := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(accentColor).
+			Padding(1, 2).
+			Width(boxWidth)
+
+		help := statusStyle.Render("  ↑/↓ scroll • q/esc back to list")
+		return "\n" + lipgloss.NewStyle().PaddingLeft(2).Render(detailBox.Render(content)) + "\n" + help
 	}
 
 	statusBarStyle := lipgloss.NewStyle().
