@@ -80,6 +80,9 @@ func relativeTime(dateStr string) string {
 	}
 
 	d := time.Since(t)
+	if d < 0 {
+		return "just now"
+	}
 	switch {
 	case d < time.Minute:
 		return "just now"
