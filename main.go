@@ -493,15 +493,24 @@ func (m model) View() string {
 			Align(lipgloss.Center).
 			Width(m.width)
 
-		top := (m.height - 4) / 2
-		padding := strings.Repeat("\n", top)
+		timeInfo := lipgloss.NewStyle().
+			Foreground(dimColor).
+			Italic(true).
+			Align(lipgloss.Center).
+			Width(m.width).
+			Render(fmt.Sprintf("Last checked: %s • Auto-refresh: 10s", m.lastPoll.Format("15:04:05")))
 
-		empty := padding +
-			emptyStyle.Render("All caught up!") + "\n\n" +
+		centerContent := emptyStyle.Render("All caught up!") + "\n\n" +
 			subtitleStyle.Render("No unread emails in your inbox.") + "\n\n" +
-			statusStyle.Render(fmt.Sprintf("  Last checked: %s • Auto-refresh: 10s • 'r' refresh • 'q' quit", m.lastPoll.Format("15:04:05")))
+			timeInfo
 
-		return empty
+		helpBar := renderHelpBar(m.width, [][]string{
+			{"r", "refresh"},
+			{"q", "quit"},
+		})
+
+		body := lipgloss.Place(m.width, m.height-1, lipgloss.Center, lipgloss.Center, centerContent)
+		return body + "\n" + helpBar
 	}
 
 	if m.mode == detailView && m.currentEmail != nil {
