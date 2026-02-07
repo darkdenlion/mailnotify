@@ -473,7 +473,8 @@ func (m model) View() string {
 	}
 
 	if m.loading {
-		return fmt.Sprintf("\n  %s Loading...\n", m.spinner.View())
+		loadingText := fmt.Sprintf("%s Loading...", m.spinner.View())
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, loadingText)
 	}
 
 	if m.mode == listView && len(m.emails) == 0 {
