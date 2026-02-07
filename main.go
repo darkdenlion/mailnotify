@@ -16,14 +16,14 @@ import (
 )
 
 var (
-	accentColor = lipgloss.Color("#7C3AED")
-	subtleColor = lipgloss.Color("#6B7280")
-	senderColor = lipgloss.Color("#60A5FA")
-	dateColor   = lipgloss.Color("#A78BFA")
-	textColor   = lipgloss.Color("#E5E7EB")
-	dimColor    = lipgloss.Color("#4B5563")
+	accentColor  = lipgloss.Color("#2563EB")
+	subtleColor  = lipgloss.Color("#6B7280")
+	senderColor  = lipgloss.Color("#60A5FA")
+	dateColor    = lipgloss.Color("#93C5FD")
+	textColor    = lipgloss.Color("#E5E7EB")
+	dimColor     = lipgloss.Color("#4B5563")
 	successColor = lipgloss.Color("#34D399")
-	errorColor  = lipgloss.Color("#FF6B6B")
+	errorColor   = lipgloss.Color("#FF6B6B")
 
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
