@@ -364,19 +364,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "r":
 			if m.mode == listView {
-				return m, fetchEmails()
+				m.loading = true
+				return m, tea.Batch(fetchEmails(), m.spinner.Tick)
 			}
 		case "a":
 			if m.mode == listView && len(m.emails) > 0 {
 				m.loading = true
-				return m, markAllAsRead()
+				return m, tea.Batch(markAllAsRead(), m.spinner.Tick)
 			}
 		case "enter":
 			if m.mode == listView && !m.loading {
 				if item, ok := m.list.SelectedItem().(email); ok {
 					m.currentEmail = &item
 					m.loading = true
-					return m, fetchEmailContent(item.index)
+					return m, tea.Batch(fetchEmailContent(item.index), m.spinner.Tick)
 				}
 			}
 		}
